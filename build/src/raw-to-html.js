@@ -22,6 +22,7 @@ const colorList = [
     "colorCubes",
     "grayscale",
 ];
+const IS_HEX_REGEX = /^#[0-9a-fA-F]{1,}/;
 const getColorFromColorCode = (colorCode, colorMode, defaultColor) => {
     switch (colorMode) {
         case "DEFAULT":
@@ -59,13 +60,17 @@ const getBgColorString = (cell) => {
 };
 const getSpanOpen = (fgColor, bgColor, colorMap) => {
     if (bgColor && fgColor) {
-        return `<span style="color:${colorMap[fgColor]};background:${colorMap[bgColor]}">`;
+        const fgColorStr = IS_HEX_REGEX.test(fgColor) ? fgColor : colorMap[fgColor];
+        const bgColorStr = IS_HEX_REGEX.test(bgColor) ? bgColor : colorMap[bgColor];
+        return `<span style="color:${fgColorStr};background:${bgColorStr}">`;
     }
     else if (!bgColor && fgColor) {
-        return `<span style="color:${colorMap[fgColor]}">`;
+        const fgColorStr = IS_HEX_REGEX.test(fgColor) ? fgColor : colorMap[fgColor];
+        return `<span style="color:${fgColorStr}">`;
     }
     else if (bgColor && !fgColor) {
-        return `<span style="background:${colorMap[bgColor]}">`;
+        const bgColorStr = IS_HEX_REGEX.test(bgColor) ? bgColor : colorMap[bgColor];
+        return `<span style="background:${bgColorStr}">`;
     }
     return "<span>";
 };

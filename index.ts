@@ -1,6 +1,6 @@
 import React_ from "react";
 import { Terminal } from "xterm";
-import { MenuItemConstructorOptions, Menu, clipboard } from "electron";
+import { MenuItemConstructorOptions, clipboard, MenuItem } from "electron";
 
 import { TermProps, Terms, Server } from "./src/hyper-types";
 import { rawToHtml, RawToHtmlOptions } from "./src/raw-to-html";
@@ -93,7 +93,7 @@ const decorateTerms = (
 ) => {
   // Terms alike class
   return class extends React.Component<
-    { onDecorated(terms: Terms): void } & TermProps
+    { onDecorated?(terms: Terms): void } & TermProps
   > {
     terms: Terms | null;
     constructor(props: any, context: any) {
@@ -105,7 +105,6 @@ const decorateTerms = (
     onDecorated(terms: Terms) {
       this.terms = terms;
       try {
-        console.log(this.props.colors);
         this.props.backgroundColor;
         const commandResgistration: Record<
           string,

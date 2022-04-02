@@ -77,7 +77,6 @@ const decorateTerms = (Terms, { React }) => {
         onDecorated(terms) {
             this.terms = terms;
             try {
-                console.log(this.props.colors);
                 this.props.backgroundColor;
                 const commandResgistration = {};
                 commandResgistration[PLUGIN_COPY_COMMAND] = (_e, _hyperDispatch) => {
