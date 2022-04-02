@@ -70,27 +70,29 @@ const getBgColorString = (cell: IBufferCell): string | undefined => {
 
 const getSpanOpen = (
   fgColor: string | undefined,
-  bgColor: string | undefined
+  bgColor: string | undefined,
+  colorMap: Record<string, string>
 ): string => {
-  if (!fgColor && !bgColor) {
-    return "<span>";
+  if (bgColor && fgColor) {
+    return `<span style="color:${colorMap[fgColor]};background:${colorMap[bgColor]}">`;
   } else if (!bgColor && fgColor) {
-    return `<span style="color:${fgColor}">`;
+    return `<span style="color:${colorMap[fgColor]}">`;
   } else if (bgColor && !fgColor) {
-    return `<span style="background:${bgColor}">`;
+    return `<span style="background:${colorMap[bgColor]}">`;
   }
-  return `<span style="color:${fgColor};background:${bgColor}">`;
+  return "<span>";
 };
 
 export interface RawToHtmlOptions {
   bgColor: string;
   fgColor: string;
+  colorMap: Record<string, string>;
 }
 
 const rawToHtml = (
   selectionPosition: ISelectionPosition,
   buffer: IBuffer,
-  { bgColor, fgColor }: RawToHtmlOptions
+  { bgColor, fgColor, colorMap }: RawToHtmlOptions
 ): string => {
   let result = `<pre style="background:${bgColor}">`;
   for (
@@ -119,7 +121,8 @@ const rawToHtml = (
 
         result += getSpanOpen(
           getFgColorString(cell, fgColor),
-          getBgColorString(cell)
+          getBgColorString(cell),
+          colorMap
         );
         result += cell.getChars();
       } else if (
@@ -131,7 +134,8 @@ const rawToHtml = (
         lastBgColor = cell.getBgColor();
         result += getSpanOpen(
           getFgColorString(cell, fgColor),
-          getBgColorString(cell)
+          getBgColorString(cell),
+          colorMap
         );
         result += cell.getChars();
       } else {

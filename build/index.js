@@ -77,10 +77,12 @@ const decorateTerms = (Terms, { React }) => {
         onDecorated(terms) {
             this.terms = terms;
             try {
+                console.log(this.props.colors);
                 this.props.backgroundColor;
                 const commandResgistration = {};
                 commandResgistration[PLUGIN_COPY_COMMAND] = (_e, _hyperDispatch) => {
                     copyAsHtml(this.terms?.getActiveTerm().term || null, {
+                        colorMap: this.props.colors,
                         bgColor: this.props.backgroundColor,
                         fgColor: this.props.foregroundColor,
                     });
@@ -100,6 +102,7 @@ const decorateTerms = (Terms, { React }) => {
                 l_window.rpc.on("command", (command) => {
                     if (command === PLUGIN_COPY_COMMAND) {
                         copyAsHtml(this.terms?.getActiveTerm().term || null, {
+                            colorMap: this.props.colors,
                             bgColor: this.props.backgroundColor,
                             fgColor: this.props.foregroundColor,
                         });

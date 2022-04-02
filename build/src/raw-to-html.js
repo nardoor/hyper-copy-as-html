@@ -57,19 +57,19 @@ const getBgColorString = (cell) => {
             : "RGB";
     return getColorFromColorCode(cell.getBgColor(), colorMode, undefined);
 };
-const getSpanOpen = (fgColor, bgColor) => {
-    if (!fgColor && !bgColor) {
-        return "<span>";
+const getSpanOpen = (fgColor, bgColor, colorMap) => {
+    if (bgColor && fgColor) {
+        return `<span style="color:${colorMap[fgColor]};background:${colorMap[bgColor]}">`;
     }
     else if (!bgColor && fgColor) {
-        return `<span style="color:${fgColor}">`;
+        return `<span style="color:${colorMap[fgColor]}">`;
     }
     else if (bgColor && !fgColor) {
-        return `<span style="background:${bgColor}">`;
+        return `<span style="background:${colorMap[bgColor]}">`;
     }
-    return `<span style="color:${fgColor};background:${bgColor}">`;
+    return "<span>";
 };
-const rawToHtml = (selectionPosition, buffer, { bgColor, fgColor }) => {
+const rawToHtml = (selectionPosition, buffer, { bgColor, fgColor, colorMap }) => {
     let result = `<pre style="background:${bgColor}">`;
     for (let row = selectionPosition.startRow; row <= selectionPosition.endRow; row++) {
         const line = buffer.getLine(row);
@@ -85,7 +85,7 @@ const rawToHtml = (selectionPosition, buffer, { bgColor, fgColor }) => {
             if (!lastFgColor && !lastBgColor) {
                 lastFgColor = cell.getFgColor();
                 lastBgColor = cell.getBgColor();
-                result += getSpanOpen(getFgColorString(cell, fgColor), getBgColorString(cell));
+                result += getSpanOpen(getFgColorString(cell, fgColor), getBgColorString(cell), colorMap);
                 result += cell.getChars();
             }
             else if (cell.getFgColor() !== lastFgColor ||
@@ -93,7 +93,7 @@ const rawToHtml = (selectionPosition, buffer, { bgColor, fgColor }) => {
                 result += "</span>";
                 lastFgColor = cell.getFgColor();
                 lastBgColor = cell.getBgColor();
-                result += getSpanOpen(getFgColorString(cell, fgColor), getBgColorString(cell));
+                result += getSpanOpen(getFgColorString(cell, fgColor), getBgColorString(cell), colorMap);
                 result += cell.getChars();
             }
             else {
