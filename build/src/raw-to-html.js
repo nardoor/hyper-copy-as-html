@@ -23,18 +23,19 @@ const colorList = [
     "grayscale",
 ];
 const IS_HEX_REGEX = /^#[0-9a-fA-F]{1,}/;
-const getColorFromColorCode = (colorCode, colorMode, defaultColor) => {
+const getColorFromColorCode = (colorCode, colorMode, bold, defaultColor) => {
+    const effectiveColorCode = bold ? colorCode + 8 : colorCode;
     switch (colorMode) {
         case "DEFAULT":
             if (colorCode === -1 || colorCode >= colorList.length) {
                 return defaultColor;
             }
-            return colorList[colorCode];
+            return colorList[effectiveColorCode];
         case "PALETTE":
             if (colorCode === -1 || colorCode >= colorList.length) {
                 return undefined;
             }
-            return colorList[colorCode];
+            return colorList[effectiveColorCode];
         case "RGB":
             console.error("hyper-copy-as-html RGB color mode not supported.");
             return undefined;
@@ -42,21 +43,21 @@ const getColorFromColorCode = (colorCode, colorMode, defaultColor) => {
             return undefined;
     }
 };
-const getFgColorString = (cell, defaultFgColor) => {
+const getFgColorString = (cell, defaultFgColor, bold) => {
     const colorMode = cell.isFgDefault()
         ? "DEFAULT"
         : cell.isFgPalette()
             ? "PALETTE"
             : "RGB";
-    return getColorFromColorCode(cell.getFgColor(), colorMode, defaultFgColor);
+    return getColorFromColorCode(cell.getFgColor(), colorMode, bold, defaultFgColor);
 };
-const getBgColorString = (cell) => {
+const getBgColorString = (cell, bold) => {
     const colorMode = cell.isBgDefault()
         ? "DEFAULT"
         : cell.isBgPalette()
             ? "PALETTE"
             : "RGB";
-    return getColorFromColorCode(cell.getBgColor(), colorMode, undefined);
+    return getColorFromColorCode(cell.getBgColor(), colorMode, bold, undefined);
 };
 const getSpanOpen = ({ bgColor, fgColor, colorMap, bold }) => {
     const result = {
@@ -100,16 +101,18 @@ const rawToHtml = (selectionPosition, buffer, { bgColor, fgColor, colorMap }) =>
             : line?.length;
         let lastFgColor = undefined;
         let lastBgColor = undefined;
+        let lastBold = undefined;
         for (let col = firstCol; col < lastCol; col++) {
             const cell = line.getCell(col);
             // Should only go through this one time per line
-            if (!lastFgColor && !lastBgColor) {
+            if (!lastFgColor && !lastBgColor && !lastBold) {
                 lastFgColor = cell.getFgColor();
                 lastBgColor = cell.getBgColor();
+                lastBold = cell.isBold() !== 0;
                 spanOpen = getSpanOpen({
-                    fgColor: getFgColorString(cell, fgColor),
-                    bgColor: getBgColorString(cell),
-                    bold: cell.isBold() !== 0,
+                    fgColor: getFgColorString(cell, fgColor, lastBold),
+                    bgColor: getBgColorString(cell, lastBold),
+                    bold: lastBold,
                     colorMap
                 });
                 result += spanOpen.openTag;
@@ -120,10 +123,11 @@ const rawToHtml = (selectionPosition, buffer, { bgColor, fgColor, colorMap }) =>
                 result += spanOpen.closeTag;
                 lastFgColor = cell.getFgColor();
                 lastBgColor = cell.getBgColor();
+                lastBold = cell.isBold() !== 0;
                 spanOpen = getSpanOpen({
-                    fgColor: getFgColorString(cell, fgColor),
-                    bgColor: getBgColorString(cell),
-                    bold: cell.isBold() !== 0,
+                    fgColor: getFgColorString(cell, fgColor, lastBold),
+                    bgColor: getBgColorString(cell, lastBold),
+                    bold: lastBold,
                     colorMap
                 });
                 result += spanOpen.openTag;
@@ -133,7 +137,7 @@ const rawToHtml = (selectionPosition, buffer, { bgColor, fgColor, colorMap }) =>
                 result += cell.getChars();
             }
         }
-        result += "</span>\n";
+        result += spanOpen.closeTag + "\n";
     }
     result += "</pre>";
     return result;
