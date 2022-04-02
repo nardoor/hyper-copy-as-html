@@ -58,24 +58,40 @@ const getBgColorString = (cell) => {
             : "RGB";
     return getColorFromColorCode(cell.getBgColor(), colorMode, undefined);
 };
-const getSpanOpen = (fgColor, bgColor, colorMap) => {
+const getSpanOpen = ({ bgColor, fgColor, colorMap, bold }) => {
+    const result = {
+        openTag: "",
+        closeTag: ""
+    };
+    if (bold) {
+        result.openTag += "<b>";
+        result.closeTag = "</b>" + result.closeTag;
+    }
     if (bgColor && fgColor) {
         const fgColorStr = IS_HEX_REGEX.test(fgColor) ? fgColor : colorMap[fgColor];
         const bgColorStr = IS_HEX_REGEX.test(bgColor) ? bgColor : colorMap[bgColor];
-        return `<span style="color:${fgColorStr};background:${bgColorStr}">`;
+        result.openTag += `<span style="color:${fgColorStr};background:${bgColorStr}">`;
     }
     else if (!bgColor && fgColor) {
         const fgColorStr = IS_HEX_REGEX.test(fgColor) ? fgColor : colorMap[fgColor];
-        return `<span style="color:${fgColorStr}">`;
+        result.openTag += `<span style="color:${fgColorStr}">`;
     }
     else if (bgColor && !fgColor) {
         const bgColorStr = IS_HEX_REGEX.test(bgColor) ? bgColor : colorMap[bgColor];
-        return `<span style="background:${bgColorStr}">`;
+        result.openTag += `<span style="background:${bgColorStr}">`;
     }
-    return "<span>";
+    else {
+        result.openTag += "<span>";
+    }
+    result.closeTag = "</span>" + result.closeTag;
+    return result;
 };
 const rawToHtml = (selectionPosition, buffer, { bgColor, fgColor, colorMap }) => {
     let result = `<pre style="background:${bgColor}">`;
+    let spanOpen = {
+        openTag: "<span>",
+        closeTag: "</span>"
+    };
     for (let row = selectionPosition.startRow; row <= selectionPosition.endRow; row++) {
         const line = buffer.getLine(row);
         const firstCol = row === selectionPosition.startRow ? selectionPosition.startColumn : 0;
@@ -90,15 +106,27 @@ const rawToHtml = (selectionPosition, buffer, { bgColor, fgColor, colorMap }) =>
             if (!lastFgColor && !lastBgColor) {
                 lastFgColor = cell.getFgColor();
                 lastBgColor = cell.getBgColor();
-                result += getSpanOpen(getFgColorString(cell, fgColor), getBgColorString(cell), colorMap);
+                spanOpen = getSpanOpen({
+                    fgColor: getFgColorString(cell, fgColor),
+                    bgColor: getBgColorString(cell),
+                    bold: cell.isBold() !== 0,
+                    colorMap
+                });
+                result += spanOpen.openTag;
                 result += cell.getChars();
             }
             else if (cell.getFgColor() !== lastFgColor ||
                 cell.getBgColor() !== lastBgColor) {
-                result += "</span>";
+                result += spanOpen.closeTag;
                 lastFgColor = cell.getFgColor();
                 lastBgColor = cell.getBgColor();
-                result += getSpanOpen(getFgColorString(cell, fgColor), getBgColorString(cell), colorMap);
+                spanOpen = getSpanOpen({
+                    fgColor: getFgColorString(cell, fgColor),
+                    bgColor: getBgColorString(cell),
+                    bold: cell.isBold() !== 0,
+                    colorMap
+                });
+                result += spanOpen.openTag;
                 result += cell.getChars();
             }
             else {

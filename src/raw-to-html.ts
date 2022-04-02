@@ -1,5 +1,17 @@
 import { ISelectionPosition, IBuffer, IBufferCell } from "xterm";
 
+type PickElsePartial<T, K extends keyof T> =  {[P in keyof T]: K extends P ? T[P] :T[P] | undefined};
+export interface RawToHtmlOptions {
+  bgColor: string;
+  fgColor: string;
+  colorMap: Record<string, string>;
+}
+
+interface SpanOpen {
+  openTag : string
+  closeTag : string
+}
+
 // hyper/app/utils/colors.txt
 const colorList = [
   "black",
@@ -70,29 +82,36 @@ const getBgColorString = (cell: IBufferCell): string | undefined => {
 };
 
 const getSpanOpen = (
-  fgColor: string | undefined,
-  bgColor: string | undefined,
-  colorMap: Record<string, string>
-): string => {
+  {bgColor, fgColor,colorMap, bold}: PickElsePartial<RawToHtmlOptions,'colorMap'> & {bold:boolean}
+): SpanOpen => {
+  const result: SpanOpen = {
+    openTag: "",
+    closeTag:""
+  }
+  if (bold)
+  {
+    result.openTag += "<b>"
+    result.closeTag = "</b>" + result.closeTag
+  }
+
   if (bgColor && fgColor) {
     const fgColorStr = IS_HEX_REGEX.test(fgColor) ? fgColor : colorMap[fgColor]
     const bgColorStr = IS_HEX_REGEX.test(bgColor) ? bgColor : colorMap[bgColor]
-    return `<span style="color:${fgColorStr};background:${bgColorStr}">`;
+    result.openTag += `<span style="color:${fgColorStr};background:${bgColorStr}">`;
+   
   } else if (!bgColor && fgColor) {
     const fgColorStr = IS_HEX_REGEX.test(fgColor) ? fgColor : colorMap[fgColor]
-    return `<span style="color:${fgColorStr}">`;
+    result.openTag +=`<span style="color:${fgColorStr}">`;
   } else if (bgColor && !fgColor) {
     const bgColorStr = IS_HEX_REGEX.test(bgColor) ? bgColor : colorMap[bgColor]
-    return `<span style="background:${bgColorStr}">`;
+    result.openTag += `<span style="background:${bgColorStr}">`;
   }
-  return "<span>";
+  else {
+    result.openTag += "<span>";
+  }
+  result.closeTag = "</span>" + result.closeTag;
+  return result;
 };
-
-export interface RawToHtmlOptions {
-  bgColor: string;
-  fgColor: string;
-  colorMap: Record<string, string>;
-}
 
 const rawToHtml = (
   selectionPosition: ISelectionPosition,
@@ -100,6 +119,10 @@ const rawToHtml = (
   { bgColor, fgColor, colorMap }: RawToHtmlOptions
 ): string => {
   let result = `<pre style="background:${bgColor}">`;
+  let spanOpen : SpanOpen = {
+    openTag: "<span>",
+    closeTag: "</span>"
+  };
   for (
     let row = selectionPosition.startRow;
     row <= selectionPosition.endRow;
@@ -124,24 +147,28 @@ const rawToHtml = (
         lastFgColor = cell.getFgColor();
         lastBgColor = cell.getBgColor();
 
-        result += getSpanOpen(
-          getFgColorString(cell, fgColor),
-          getBgColorString(cell),
-          colorMap
+        spanOpen = getSpanOpen({
+          fgColor: getFgColorString(cell, fgColor),
+          bgColor: getBgColorString(cell),
+          bold: cell.isBold() !== 0,
+          colorMap}
         );
+        result += spanOpen.openTag;
         result += cell.getChars();
       } else if (
         cell.getFgColor() !== lastFgColor ||
         cell.getBgColor() !== lastBgColor
       ) {
-        result += "</span>";
+        result += spanOpen.closeTag;
         lastFgColor = cell.getFgColor();
         lastBgColor = cell.getBgColor();
-        result += getSpanOpen(
-          getFgColorString(cell, fgColor),
-          getBgColorString(cell),
-          colorMap
+        spanOpen = getSpanOpen({
+          fgColor: getFgColorString(cell, fgColor),
+          bgColor: getBgColorString(cell),
+          bold: cell.isBold() !== 0,
+          colorMap}
         );
+        result+= spanOpen.openTag;
         result += cell.getChars();
       } else {
         result += cell.getChars();
