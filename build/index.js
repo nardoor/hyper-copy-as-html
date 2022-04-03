@@ -82,8 +82,8 @@ const decorateTerms = (Terms, { React }) => {
                 commandResgistration[PLUGIN_COPY_COMMAND] = (_e, _hyperDispatch) => {
                     copyAsHtml(this.terms?.getActiveTerm().term || null, {
                         colorMap: this.props.colors,
-                        bgColor: this.props.backgroundColor,
-                        fgColor: this.props.foregroundColor,
+                        defBgColor: this.props.backgroundColor,
+                        defFgColor: this.props.foregroundColor,
                     });
                 };
                 this.terms.registerCommands(commandResgistration);
@@ -102,8 +102,8 @@ const decorateTerms = (Terms, { React }) => {
                     if (command === PLUGIN_COPY_COMMAND) {
                         copyAsHtml(this.terms?.getActiveTerm().term || null, {
                             colorMap: this.props.colors,
-                            bgColor: this.props.backgroundColor,
-                            fgColor: this.props.foregroundColor,
+                            defBgColor: this.props.backgroundColor,
+                            defFgColor: this.props.foregroundColor,
                         });
                     }
                 });

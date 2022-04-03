@@ -59,26 +59,37 @@ const getBgColorString = (cell, bold) => {
             : "RGB";
     return getColorFromColorCode(cell.getBgColor(), colorMode, bold, undefined);
 };
-const getSpanOpen = ({ bgColor, fgColor, colorMap, bold }) => {
+const getSpanOpen = ({ bgColor, fgColor, colorMap, defBgColor, defFgColor, bold, invert, }) => {
     const result = {
         openTag: "",
-        closeTag: ""
+        closeTag: "",
     };
     if (bold) {
         result.openTag += "<b>";
         result.closeTag = "</b>" + result.closeTag;
     }
-    if (bgColor && fgColor) {
-        const fgColorStr = IS_HEX_REGEX.test(fgColor) ? fgColor : colorMap[fgColor];
-        const bgColorStr = IS_HEX_REGEX.test(bgColor) ? bgColor : colorMap[bgColor];
+    let fgColorStr = fgColor
+        ? IS_HEX_REGEX.test(fgColor)
+            ? fgColor
+            : colorMap[fgColor]
+        : undefined;
+    let bgColorStr = bgColor
+        ? IS_HEX_REGEX.test(bgColor)
+            ? bgColor
+            : colorMap[bgColor]
+        : undefined;
+    if (invert) {
+        const tmp = fgColorStr;
+        fgColorStr = bgColorStr;
+        bgColorStr = tmp;
+    }
+    if (bgColorStr && fgColorStr) {
         result.openTag += `<span style="color:${fgColorStr};background:${bgColorStr}">`;
     }
-    else if (!bgColor && fgColor) {
-        const fgColorStr = IS_HEX_REGEX.test(fgColor) ? fgColor : colorMap[fgColor];
+    else if (!bgColorStr && fgColorStr) {
         result.openTag += `<span style="color:${fgColorStr}">`;
     }
-    else if (bgColor && !fgColor) {
-        const bgColorStr = IS_HEX_REGEX.test(bgColor) ? bgColor : colorMap[bgColor];
+    else if (bgColorStr && !fgColorStr) {
         result.openTag += `<span style="background:${bgColorStr}">`;
     }
     else {
@@ -87,11 +98,11 @@ const getSpanOpen = ({ bgColor, fgColor, colorMap, bold }) => {
     result.closeTag = "</span>" + result.closeTag;
     return result;
 };
-const rawToHtml = (selectionPosition, buffer, { bgColor, fgColor, colorMap }) => {
-    let result = `<pre style="background:${bgColor}">`;
+const rawToHtml = (selectionPosition, buffer, { defBgColor, defFgColor, colorMap }) => {
+    let result = `<pre style="background:${defBgColor}">\n`;
     let spanOpen = {
         openTag: "<span>",
-        closeTag: "</span>"
+        closeTag: "</span>",
     };
     for (let row = selectionPosition.startRow; row <= selectionPosition.endRow; row++) {
         const line = buffer.getLine(row);
@@ -102,39 +113,50 @@ const rawToHtml = (selectionPosition, buffer, { bgColor, fgColor, colorMap }) =>
         let lastFgColor = undefined;
         let lastBgColor = undefined;
         let lastBold = undefined;
+        let lastInverse = undefined;
         for (let col = firstCol; col < lastCol; col++) {
             const cell = line.getCell(col);
             // Should only go through this one time per line
-            if (!lastFgColor && !lastBgColor && !lastBold) {
+            if (!lastFgColor && !lastBgColor && !lastBold && !lastInverse) {
                 lastFgColor = cell.getFgColor();
                 lastBgColor = cell.getBgColor();
                 lastBold = cell.isBold() !== 0;
+                lastInverse = cell.isInverse() !== 0;
                 spanOpen = getSpanOpen({
-                    fgColor: getFgColorString(cell, fgColor, lastBold),
+                    fgColor: getFgColorString(cell, defFgColor, lastBold),
                     bgColor: getBgColorString(cell, lastBold),
+                    defFgColor,
+                    defBgColor,
                     bold: lastBold,
-                    colorMap
+                    invert: lastInverse,
+                    colorMap,
                 });
                 result += spanOpen.openTag;
-                result += cell.getChars();
+                result += cell.getChars() || " ";
             }
             else if (cell.getFgColor() !== lastFgColor ||
-                cell.getBgColor() !== lastBgColor) {
+                cell.getBgColor() !== lastBgColor ||
+                (cell.isBold() !== 0) !== lastBold ||
+                (cell.isInverse() !== 0) !== lastInverse) {
                 result += spanOpen.closeTag;
                 lastFgColor = cell.getFgColor();
                 lastBgColor = cell.getBgColor();
                 lastBold = cell.isBold() !== 0;
+                lastInverse = cell.isInverse() !== 0;
                 spanOpen = getSpanOpen({
-                    fgColor: getFgColorString(cell, fgColor, lastBold),
+                    fgColor: getFgColorString(cell, defFgColor, lastBold),
                     bgColor: getBgColorString(cell, lastBold),
+                    defFgColor,
+                    defBgColor,
                     bold: lastBold,
-                    colorMap
+                    invert: lastInverse,
+                    colorMap,
                 });
                 result += spanOpen.openTag;
-                result += cell.getChars();
+                result += cell.getChars() || " ";
             }
             else {
-                result += cell.getChars();
+                result += cell.getChars() || " ";
             }
         }
         result += spanOpen.closeTag + "\n";

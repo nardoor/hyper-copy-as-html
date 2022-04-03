@@ -116,8 +116,8 @@ const decorateTerms = (
         ) => {
           copyAsHtml(this.terms?.getActiveTerm().term || null, {
             colorMap: this.props.colors,
-            bgColor: this.props.backgroundColor,
-            fgColor: this.props.foregroundColor,
+            defBgColor: this.props.backgroundColor,
+            defFgColor: this.props.foregroundColor,
           });
         };
         this.terms.registerCommands(commandResgistration);
@@ -136,8 +136,8 @@ const decorateTerms = (
           if (command === PLUGIN_COPY_COMMAND) {
             copyAsHtml(this.terms?.getActiveTerm().term || null, {
               colorMap: this.props.colors,
-              bgColor: this.props.backgroundColor,
-              fgColor: this.props.foregroundColor,
+              defBgColor: this.props.backgroundColor,
+              defFgColor: this.props.foregroundColor,
             });
           }
         });

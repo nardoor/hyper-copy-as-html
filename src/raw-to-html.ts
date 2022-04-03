@@ -1,15 +1,18 @@
 import { ISelectionPosition, IBuffer, IBufferCell } from "xterm";
 
-type PickElsePartial<T, K extends keyof T> =  {[P in keyof T]: K extends P ? T[P] :T[P] | undefined};
+type PickElsePartial<T, K extends keyof T> = Partial<Exclude<T, K>> & {
+  [P in K]: T[P];
+};
+type a = Pick<{ a: string; b: string }, "a" | "b">;
 export interface RawToHtmlOptions {
-  bgColor: string;
-  fgColor: string;
+  defBgColor: string;
+  defFgColor: string;
   colorMap: Record<string, string>;
 }
 
 interface SpanOpen {
-  openTag : string
-  closeTag : string
+  openTag: string;
+  closeTag: string;
 }
 
 // hyper/app/utils/colors.txt
@@ -34,7 +37,7 @@ const colorList = [
   "grayscale",
 ];
 
-const IS_HEX_REGEX = /^#[0-9a-fA-F]{1,}/
+const IS_HEX_REGEX = /^#[0-9a-fA-F]{1,}/;
 type ColorMode = "DEFAULT" | "RGB" | "PALETTE";
 
 const getColorFromColorCode = (
@@ -43,7 +46,7 @@ const getColorFromColorCode = (
   bold: boolean,
   defaultColor: string | undefined
 ): string | undefined => {
-  const effectiveColorCode = bold ? colorCode + 8 : colorCode
+  const effectiveColorCode = bold ? colorCode + 8 : colorCode;
   switch (colorMode) {
     case "DEFAULT":
       if (colorCode === -1 || colorCode >= colorList.length) {
@@ -72,10 +75,18 @@ const getFgColorString = (
     : cell.isFgPalette()
     ? "PALETTE"
     : "RGB";
-  return getColorFromColorCode(cell.getFgColor(), colorMode, bold, defaultFgColor);
+  return getColorFromColorCode(
+    cell.getFgColor(),
+    colorMode,
+    bold,
+    defaultFgColor
+  );
 };
 
-const getBgColorString = (cell: IBufferCell, bold: boolean): string | undefined => {
+const getBgColorString = (
+  cell: IBufferCell,
+  bold: boolean
+): string | undefined => {
   const colorMode: ColorMode = cell.isBgDefault()
     ? "DEFAULT"
     : cell.isBgPalette()
@@ -83,33 +94,56 @@ const getBgColorString = (cell: IBufferCell, bold: boolean): string | undefined 
     : "RGB";
   return getColorFromColorCode(cell.getBgColor(), colorMode, bold, undefined);
 };
-
-const getSpanOpen = (
-  {bgColor, fgColor,colorMap, bold}: PickElsePartial<RawToHtmlOptions,'colorMap'> & {bold:boolean}
-): SpanOpen => {
+const getSpanOpen = ({
+  bgColor,
+  fgColor,
+  colorMap,
+  defBgColor,
+  defFgColor,
+  bold,
+  invert,
+}: PickElsePartial<
+  RawToHtmlOptions,
+  "colorMap" | "defBgColor" | "defFgColor"
+> & {
+  bold: boolean;
+  invert: boolean;
+  bgColor: string | undefined;
+  fgColor: string | undefined;
+}): SpanOpen => {
   const result: SpanOpen = {
     openTag: "",
-    closeTag:""
-  }
-  if (bold)
-  {
-    result.openTag += "<b>"
-    result.closeTag = "</b>" + result.closeTag
+    closeTag: "",
+  };
+
+  if (bold) {
+    result.openTag += "<b>";
+    result.closeTag = "</b>" + result.closeTag;
   }
 
-  if (bgColor && fgColor) {
-    const fgColorStr = IS_HEX_REGEX.test(fgColor) ? fgColor : colorMap[fgColor]
-    const bgColorStr = IS_HEX_REGEX.test(bgColor) ? bgColor : colorMap[bgColor]
-    result.openTag += `<span style="color:${fgColorStr};background:${bgColorStr}">`;
-   
-  } else if (!bgColor && fgColor) {
-    const fgColorStr = IS_HEX_REGEX.test(fgColor) ? fgColor : colorMap[fgColor]
-    result.openTag +=`<span style="color:${fgColorStr}">`;
-  } else if (bgColor && !fgColor) {
-    const bgColorStr = IS_HEX_REGEX.test(bgColor) ? bgColor : colorMap[bgColor]
-    result.openTag += `<span style="background:${bgColorStr}">`;
+  let fgColorStr = fgColor
+    ? IS_HEX_REGEX.test(fgColor)
+      ? fgColor
+      : colorMap[fgColor]
+    : undefined;
+  let bgColorStr = bgColor
+    ? IS_HEX_REGEX.test(bgColor)
+      ? bgColor
+      : colorMap[bgColor]
+    : undefined;
+
+  if (invert) {
+    const tmp = fgColorStr;
+    fgColorStr = bgColorStr;
+    bgColorStr = tmp;
   }
-  else {
+  if (bgColorStr && fgColorStr) {
+    result.openTag += `<span style="color:${fgColorStr};background:${bgColorStr}">`;
+  } else if (!bgColorStr && fgColorStr) {
+    result.openTag += `<span style="color:${fgColorStr}">`;
+  } else if (bgColorStr && !fgColorStr) {
+    result.openTag += `<span style="background:${bgColorStr}">`;
+  } else {
     result.openTag += "<span>";
   }
   result.closeTag = "</span>" + result.closeTag;
@@ -119,12 +153,12 @@ const getSpanOpen = (
 const rawToHtml = (
   selectionPosition: ISelectionPosition,
   buffer: IBuffer,
-  { bgColor, fgColor, colorMap }: RawToHtmlOptions
+  { defBgColor, defFgColor, colorMap }: RawToHtmlOptions
 ): string => {
-  let result = `<pre style="background:${bgColor}">`;
-  let spanOpen : SpanOpen = {
+  let result = `<pre style="background:${defBgColor}">\n`;
+  let spanOpen: SpanOpen = {
     openTag: "<span>",
-    closeTag: "</span>"
+    closeTag: "</span>",
   };
   for (
     let row = selectionPosition.startRow;
@@ -142,42 +176,53 @@ const rawToHtml = (
     let lastFgColor = undefined;
     let lastBgColor = undefined;
     let lastBold = undefined;
+    let lastInverse = undefined;
     for (let col = firstCol; col < lastCol; col++) {
       const cell = line.getCell(col)!;
 
       // Should only go through this one time per line
-      if (!lastFgColor && !lastBgColor && !lastBold) {
+      if (!lastFgColor && !lastBgColor && !lastBold && !lastInverse) {
         lastFgColor = cell.getFgColor();
         lastBgColor = cell.getBgColor();
         lastBold = cell.isBold() !== 0;
+        lastInverse = cell.isInverse() !== 0;
 
         spanOpen = getSpanOpen({
-          fgColor: getFgColorString(cell, fgColor, lastBold),
+          fgColor: getFgColorString(cell, defFgColor, lastBold),
           bgColor: getBgColorString(cell, lastBold),
+          defFgColor,
+          defBgColor,
           bold: lastBold,
-          colorMap}
-        );
+          invert: lastInverse,
+          colorMap,
+        });
         result += spanOpen.openTag;
-        result += cell.getChars();
+        result += cell.getChars() || " ";
       } else if (
         cell.getFgColor() !== lastFgColor ||
-        cell.getBgColor() !== lastBgColor
+        cell.getBgColor() !== lastBgColor ||
+        (cell.isBold() !== 0) !== lastBold ||
+        (cell.isInverse() !== 0) !== lastInverse
       ) {
         result += spanOpen.closeTag;
         lastFgColor = cell.getFgColor();
         lastBgColor = cell.getBgColor();
         lastBold = cell.isBold() !== 0;
+        lastInverse = cell.isInverse() !== 0;
 
         spanOpen = getSpanOpen({
-          fgColor: getFgColorString(cell, fgColor, lastBold),
+          fgColor: getFgColorString(cell, defFgColor, lastBold),
           bgColor: getBgColorString(cell, lastBold),
+          defFgColor,
+          defBgColor,
           bold: lastBold,
-          colorMap}
-        );
-        result+= spanOpen.openTag;
-        result += cell.getChars();
+          invert: lastInverse,
+          colorMap,
+        });
+        result += spanOpen.openTag;
+        result += cell.getChars() || " ";
       } else {
-        result += cell.getChars();
+        result += cell.getChars() || " ";
       }
     }
     result += spanOpen.closeTag + "\n";
