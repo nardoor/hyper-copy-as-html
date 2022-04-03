@@ -6,16 +6,19 @@ Adds a feature to copy selected text as html.
 
 ## Installation
 
-For now you can install this by cloning this repository under `~/.hyper_plugins/local/`.
-Adding it to _npm_ and submitting it as an official hyper plugin will be done soon.
+You can either:
+
+- run `hyper i hyper-copy-as-html`
+- add `"hyper-copy-as-html"` in the `plugins` list inside `~/.hyper.js`
+- clone the repository under `~/.hyper_plugins/local/hyper-copy-as-html` **and** add `"hyper-copy-as-html"` in the `localPlugins` list inside `~/.hyper.js`
 
 ## Usage
 
 You can use either of :
 
-- The _Edit_ menu _Copy as HTML_ button :
+- The **Edit** menu **Copy as HTML** button :
 
-  ![Copy as html](https://raw.githubusercontent.com/nardoor/hyper-copy-as-html/master/doc/edit_copy_as_html.png)
+  <img src="https://raw.githubusercontent.com/nardoor/hyper-copy-as-html/master/doc/edit_copy_as_html.png" style="width:40%">
 
 - The shortcut `ctrl+shift+H`
 
