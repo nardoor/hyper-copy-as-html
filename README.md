@@ -2,6 +2,8 @@
 
 Adds a feature to copy selected text as html.
 
+![Copy as html](https://raw.githubusercontent.com/nardoor/hyper-copy-as-html/master/doc/demo.gif)
+
 ## Installation
 
 For now you can install this by cloning this repository under `~/.hyper_plugins/local/`.
