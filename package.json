@@ -1,11 +1,15 @@
 {
   "name": "hyper-copy-as-html",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Plugin to bring \"copy-as-html\" feature to hyper.",
   "main": "build/index.js",
   "homepage": "https://github.com/nardoor/hyper-copy-as-html",
   "keywords": [
     "hyper",
+    "hyper-plugin",
+    "hyperterm",
+    "hyperterm-plugin",
+    "plugin",
     "html",
     "copy",
     "typescript"

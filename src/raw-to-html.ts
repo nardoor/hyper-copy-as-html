@@ -98,8 +98,6 @@ const getSpanOpen = ({
   bgColor,
   fgColor,
   colorMap,
-  defBgColor,
-  defFgColor,
   bold,
   invert,
 }: PickElsePartial<

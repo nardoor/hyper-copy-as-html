@@ -59,7 +59,7 @@ const getBgColorString = (cell, bold) => {
             : "RGB";
     return getColorFromColorCode(cell.getBgColor(), colorMode, bold, undefined);
 };
-const getSpanOpen = ({ bgColor, fgColor, colorMap, defBgColor, defFgColor, bold, invert, }) => {
+const getSpanOpen = ({ bgColor, fgColor, colorMap, bold, invert, }) => {
     const result = {
         openTag: "",
         closeTag: "",
