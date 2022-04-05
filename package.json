@@ -1,6 +1,6 @@
 {
   "name": "hyper-copy-as-html",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Plugin to bring \"copy-as-html\" feature to hyper.",
   "main": "build/index.js",
   "homepage": "https://github.com/nardoor/hyper-copy-as-html",

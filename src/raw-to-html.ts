@@ -46,7 +46,7 @@ const getColorFromColorCode = (
   bold: boolean,
   defaultColor: string | undefined
 ): string | undefined => {
-  const effectiveColorCode = bold ? colorCode + 8 : colorCode;
+  const effectiveColorCode = bold && colorCode < 8 ? colorCode + 8 : colorCode;
   switch (colorMode) {
     case "DEFAULT":
       if (colorCode === -1 || colorCode >= colorList.length) {

@@ -24,7 +24,7 @@ const colorList = [
 ];
 const IS_HEX_REGEX = /^#[0-9a-fA-F]{1,}/;
 const getColorFromColorCode = (colorCode, colorMode, bold, defaultColor) => {
-    const effectiveColorCode = bold ? colorCode + 8 : colorCode;
+    const effectiveColorCode = bold && colorCode < 8 ? colorCode + 8 : colorCode;
     switch (colorMode) {
         case "DEFAULT":
             if (colorCode === -1 || colorCode >= colorList.length) {
